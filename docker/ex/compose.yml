@@ -1,0 +1,36 @@
+name: subconverter-ui
+
+services:
+  # Conversion engine. Not exposed to the host; reachable only from the
+  # webui nginx proxy on the internal `sc-net` network.
+  subconverter:
+    image: tindy2013/subconverter:latest
+    container_name: subconverter
+    restart: unless-stopped
+    env_file:
+      - .subconverter.env
+    volumes:
+      - ../vol/subconverter/base/config:/base/config
+      - ../vol/subconverter/base/rules:/base/rules
+      - ../vol/subconverter/base/logs:/base/logs
+    networks:
+      - sc-net
+
+  # Front-end SPA + nginx reverse proxy. Single host entry point on :8080.
+  webui:
+    build:
+      context: ../..
+      dockerfile: docker/ex/Dockerfile
+    image: subconverter-webui:local
+    container_name: subconverter-webui
+    restart: unless-stopped
+    depends_on:
+      - subconverter
+    ports:
+      - "8080:80"
+    networks:
+      - sc-net
+
+networks:
+  sc-net:
+    driver: bridge

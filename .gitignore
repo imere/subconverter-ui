@@ -1,0 +1,27 @@
+node_modules
+dist
+coverage
+*.local
+.env
+.env.*
+!.env.example
+
+# Keep the vol directory tree but ignore runtime data
+docker/vol/subconverter/base/config/*
+docker/vol/subconverter/base/rules/*
+docker/vol/subconverter/base/logs/*
+!docker/vol/subconverter/base/config/.gitkeep
+!docker/vol/subconverter/base/rules/.gitkeep
+!docker/vol/subconverter/base/logs/.gitkeep
+
+# WorkBuddy internal data
+.workbuddy
+
+# husky generated internals (rebuilt by `prepare` on install)
+.husky/_/
+
+# scratch temp files
+_tmp_*
+
+# scratch temp files
+_tmp_*

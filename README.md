@@ -1,0 +1,167 @@
+# Subconverter WebUI
+
+A engineering-grade, test-driven WebUI for [`tindy2013/subconverter`](https://github.com/tindy2013/subconverter).
+It builds subscription-conversion requests and proxies them to a subconverter engine through a
+single-origin nginx entry point, so the browser never hits a CORS wall.
+
+> Scope (Tier A): conversion panel + result preview / copy / download + engine `/version` status.
+> The nginx proxy already exposes `/getruleset`, `/getprofile`, `/render`, `/refreshrules`, so the
+> config-management tiers (B / C) can be layered on later without touching the container topology.
+
+---
+
+## Architecture
+
+```
+                :8080 (host)
+   ┌────────────────────────────────────────────┐
+   │  nginx  (webui container)                   │
+   │   ├─ /            → SPA (static)            │
+   │   ├─ /sub         ┐                         │
+   │   ├─ /version     ├─ proxy ───────────────┐ │
+   │   ├─ /getruleset  ┘                       ▼ │
+   │   └─ /getprofile, /render, /refreshrules   │
+   └────────────────────────────────────────────┘
+                                                   │  internal network (sc-net)
+                                                   ▼
+                                      ┌──────────────────────────┐
+                                      │  subconverter:25500      │
+                                      │  (official image,        │
+                                      │   not exposed to host)   │
+                                      │  /base/{config,rules,    │
+                                      │         logs}←volume     │
+                                      └──────────────────────────┘
+```
+
+**Why a single nginx entry point?** subconverter does not emit CORS headers, so a browser calling
+it directly is blocked. By serving the SPA and reverse-proxying the API on the same origin, CORS
+disappears and there is no backend to maintain.
+
+---
+
+## Tech stack
+
+| Layer        | Choice                                                      |
+|--------------|-------------------------------------------------------------|
+| Runtime      | Node 22 LTS                                                 |
+| Language     | TypeScript (strict) — pinned to `^6` (see note below)       |
+| UI           | React 19 + Vite 8                                           |
+| Tests        | Vitest 5 + Testing Library + jsdom (TDD: red → green)       |
+| Lint         | ESLint 10 (flat config)                                     |
+| Format       | **Prettier 3, integrated into ESLint** (no `.prettierignore`) |
+| Git hooks    | husky 9 + lint-staged 17 (pre-commit gate)                  |
+| Runtime img  | `nginx:1.27-alpine` (SPA host + reverse proxy)              |
+
+> **TypeScript version note:** `typescript-eslint@8` (currently latest) only supports
+> `typescript >=4.8.4 <6.1.0`, so TypeScript is pinned to `^6` even though `7.x` exists.
+> This is an ecosystem timing constraint, not a misconfiguration; everything else is on its latest.
+
+---
+
+## Project structure
+
+```
+subconverter-ui/
+├── docker/
+│   ├── ex/                     # example orchestration + build assets
+│   │   ├── Dockerfile          # multi-stage: pnpm build → nginx:alpine
+│   │   ├── nginx.conf          # SPA + reverse proxy to subconverter
+│   │   ├── compose.yml         # two services: subconverter + webui
+│   │   ├── .subconverter.env   # TZ / API_MODE / token for the engine
+│   │   ├── pull.sh  start.sh  down.sh  roll.sh  upgrade.sh
+│   │   └── ...
+│   └── vol/                    # persisted volumes (relative paths in compose)
+│       └── subconverter/base/{config,rules,logs}/   # → /base/* in container
+├── src/
+│   ├── api/subconverter.ts          # fetch client (convert / getVersion)
+│   ├── utils/buildSubUrl.ts         # /sub query-string builder
+│   ├── hooks/useConversion.ts       # idle→loading→success|error state machine
+│   ├── components/                  # ConversionForm, ResultViewer
+│   ├── types/index.ts               # shared domain types
+│   └── test/setup.ts                # jest-dom matchers
+├── .github/workflows/ci.yml         # test + lint + build + image build
+└── docs/implementation-plan.md      # the agreed implementation plan
+```
+
+Tests live next to the code they cover (`*.test.ts(x)`).
+
+---
+
+## Getting started (local dev)
+
+Prerequisites: **Node 22**, **pnpm 10**.
+
+```bash
+pnpm install        # install dependencies (lockfile is committed)
+pnpm dev            # start Vite dev server (http://localhost:5173)
+pnpm test           # watch mode
+pnpm test:run       # single run (CI)
+pnpm test:cov       # coverage (v8)
+pnpm lint           # ESLint (Prettier enforced as a rule)
+pnpm lint:fix       # auto-fix
+pnpm build          # tsc --noEmit + vite production build → dist/
+```
+
+The dev server targets `/sub` and `/version` at the same origin; for a real engine you would
+point them at a running subconverter (e.g. via a Vite dev proxy or by running the stack below).
+
+### TDD workflow
+
+This project was built red → green:
+
+1. Write the test (e.g. `src/utils/buildSubUrl.test.ts`).
+2. Run it — it fails (module missing / behavior absent).
+3. Implement the minimum in `buildSubUrl.ts` to make it pass.
+4. `pnpm test:run` + `pnpm lint` stay green.
+
+Husky's pre-commit hook runs `lint-staged`, which runs `eslint --fix` on staged files, so
+formatting and linting are enforced before every commit.
+
+---
+
+## Docker / Podman deployment
+
+All orchestration assets live in `docker/ex/`. The compose file defines two services on a private
+`sc-net` network; only the `webui` service is published to the host on **port 8080**.
+
+```bash
+cd docker/ex
+
+# first time / after config changes to the engine
+./pull.sh          # pull subconverter + build webui images
+./start.sh         # up -d  → http://localhost:8080
+
+# everyday
+./down.sh          # stop & remove containers (volumes preserved)
+./roll.sh          # rebuild & restart only the webui (front-end rollout)
+./upgrade.sh       # upgrade subconverter image + rebuild webui, recreate both
+```
+
+### Volumes
+
+`docker/vol/subconverter/base/{config,rules,logs}` are mounted into the engine container at
+`/base/{config,rules,logs}` so pref.yml, rulesets and logs persist across restarts. They are
+git-ignored except for the `.gitkeep` placeholders.
+
+### Environment
+
+`docker/ex/.subconverter.env` is passed to the engine container. Set `SUBCONVERTER_TOKEN` before
+exposing the stack, and consider a Basic-Auth layer in front of the management endpoints
+(`/getprofile`, `/refreshrules`, …) if you later implement the config-management tiers.
+
+> **Note on tooling:** the scripts use `podman compose`. On a Docker host, replace
+> `podman compose` with `docker compose` in the scripts (the compose file is compatible).
+
+---
+
+## CI
+
+`.github/workflows/ci.yml` runs on every push / PR: `pnpm install --frozen-lockfile` →
+`pnpm lint` → `pnpm test:run` → `pnpm build` → `docker build` of the webui image (validates the
+Dockerfile). The repo is wired to `git@github.com:imere/subconverter-ui.git`.
+
+---
+
+## License
+
+MIT (or align with the subconverter project as appropriate).
