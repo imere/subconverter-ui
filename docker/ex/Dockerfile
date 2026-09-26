@@ -16,7 +16,7 @@ COPY . .
 RUN pnpm build
 
 # ---- runtime stage: serve the SPA with nginx ----
-FROM nginx:1.27-alpine AS runtime
+FROM nginx:1.30-alpine AS runtime
 # Single-entry nginx: serves the SPA AND reverse-proxies /sub, /version, ...
 # to the internal subconverter service, so the browser never hits CORS.
 COPY docker/ex/nginx.conf /etc/nginx/conf.d/default.conf
