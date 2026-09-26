@@ -1,5 +1,8 @@
 # Subconverter WebUI
 
+[![CI](https://github.com/imere/subconverter-ui/actions/workflows/ci.yml/badge.svg)](https://github.com/imere/subconverter-ui/actions/workflows/ci.yml)
+[![Release](https://github.com/imere/subconverter-ui/actions/workflows/release.yml/badge.svg)](https://github.com/imere/subconverter-ui/actions/releases)
+
 A engineering-grade, test-driven WebUI for [`tindy2013/subconverter`](https://github.com/tindy2013/subconverter).
 It builds subscription-conversion requests and proxies them to a subconverter engine through a
 single-origin nginx entry point, so the browser never hits a CORS wall.
@@ -49,7 +52,7 @@ disappears and there is no backend to maintain.
 | Tests        | Vitest 5 + Testing Library + jsdom (TDD: red → green)       |
 | Lint         | ESLint 10 (flat config)                                     |
 | Format       | **Prettier 3, integrated into ESLint** (no `.prettierignore`) |
-| Git hooks    | husky 9 + lint-staged 17 (pre-commit gate)                  |
+| Git hooks    | husky 9 + lint-staged 17 (pre-commit) + commitlint 19 (commit-msg) |
 | Runtime img  | `nginx:1.27-alpine` (SPA host + reverse proxy)              |
 
 > **TypeScript version note:** `typescript-eslint@8` (currently latest) only supports
@@ -80,6 +83,11 @@ subconverter-ui/
 │   ├── types/index.ts               # shared domain types
 │   └── test/setup.ts                # jest-dom matchers
 ├── .github/workflows/ci.yml         # test + lint + build + image build
+├── .github/workflows/release.yml     # tag → GHCR image + GitHub release
+├── .github/dependabot.yml            # automated dependency updates
+├── .commitlintrc.json               # conventional-commit policy
+├── .husky/                          # pre-commit (lint-staged) + commit-msg (commitlint)
+├── .nvmrc                           # pins Node 22 for contributors
 └── docs/implementation-plan.md      # the agreed implementation plan
 ```
 
@@ -115,7 +123,9 @@ This project was built red → green:
 4. `pnpm test:run` + `pnpm lint` stay green.
 
 Husky's pre-commit hook runs `lint-staged`, which runs `eslint --fix` on staged files, so
-formatting and linting are enforced before every commit.
+formatting and linting are enforced before every commit. The `commit-msg` hook runs `commitlint`
+against the [Conventional Commits](https://www.conventionalcommits.org/) spec, so history stays
+machine-readable (and release notes can be auto-generated).
 
 ---
 
@@ -154,11 +164,24 @@ exposing the stack, and consider a Basic-Auth layer in front of the management e
 
 ---
 
-## CI
+## CI / CD
 
-`.github/workflows/ci.yml` runs on every push / PR: `pnpm install --frozen-lockfile` →
-`pnpm lint` → `pnpm test:run` → `pnpm build` → `docker build` of the webui image (validates the
-Dockerfile). The repo is wired to `git@github.com:imere/subconverter-ui.git`.
+**CI** (`.github/workflows/ci.yml`) runs on every push / PR to `main`:
+`pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test:cov` (coverage uploaded as an
+artifact) → `pnpm build` → `docker build` of the webui image (validates the `Dockerfile`).
+
+**Release** (`.github/workflows/release.yml`) triggers on `v*` tags: it builds a multi-arch
+(`linux/amd64`, `linux/arm64`) image and pushes it to GitHub Container Registry as
+`ghcr.io/imere/subconverter-ui:<version>` and `:latest`, then opens a GitHub Release with
+auto-generated notes.
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0      # → builds & publishes the image, creates the release
+```
+
+**Dependency updates** — Dependabot (`.github/dependabot.yml`) opens weekly PRs for npm (pnpm),
+GitHub Actions, and the Docker base image, grouped so they don't spam.
 
 ---
 
