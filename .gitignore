@@ -1,5 +1,5 @@
 node_modules
-dist
+build
 coverage
 *.local
 .env
@@ -19,9 +19,6 @@ docker/vol/subconverter/base/logs/*
 
 # husky generated internals (rebuilt by `prepare` on install)
 .husky/_/
-
-# scratch temp files
-_tmp_*
 
 # scratch temp files
 _tmp_*

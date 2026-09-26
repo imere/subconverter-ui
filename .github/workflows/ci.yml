@@ -23,15 +23,20 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10
+          # Must match the pnpm major used locally (see pnpm-workspace.yaml).
+          version: 12
 
-      - name: Setup Node 22
+      - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          # Single source of truth: .nvmrc pins Node 24.
+          node-version-file: .nvmrc
           cache: pnpm
 
       - name: Install dependencies
+        # HUSKY=0 skips the `prepare` hook; git hooks are a local-only concern.
+        env:
+          HUSKY: 0
         run: pnpm install --frozen-lockfile
 
       - name: Lint
@@ -40,16 +45,25 @@ jobs:
       - name: Test (with coverage)
         run: pnpm test:cov
 
+      # NOTE: must run BEFORE `pnpm build`. Both the bundle and coverage land in
+      # build/, and vite's `emptyOutDir` clears all of build/ on the next step.
       - name: Upload coverage
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage
-          path: coverage/
+          path: build/coverage/
           retention-days: 14
 
       - name: Build
         run: pnpm build
+
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
+        with:
+          name: webui-build
+          path: build/
+          retention-days: 14
 
   image:
     name: Validate Docker image

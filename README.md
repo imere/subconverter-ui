@@ -46,7 +46,7 @@ disappears and there is no backend to maintain.
 
 | Layer        | Choice                                                      |
 |--------------|-------------------------------------------------------------|
-| Runtime      | Node 22 LTS                                                 |
+| Runtime      | Node 24 LTS                                                 |
 | Language     | TypeScript (strict) — pinned to `^6` (see note below)       |
 | UI           | React 19 + Vite 8                                           |
 | Tests        | Vitest 5 + Testing Library + jsdom (TDD: red → green)       |
@@ -87,7 +87,7 @@ subconverter-ui/
 ├── .github/dependabot.yml            # automated dependency updates
 ├── .commitlintrc.json               # conventional-commit policy
 ├── .husky/                          # pre-commit (lint-staged) + commit-msg (commitlint)
-├── .nvmrc                           # pins Node 22 for contributors
+├── .nvmrc                           # pins Node 24 for contributors
 └── docs/implementation-plan.md      # the agreed implementation plan
 ```
 
@@ -97,7 +97,7 @@ Tests live next to the code they cover (`*.test.ts(x)`).
 
 ## Getting started (local dev)
 
-Prerequisites: **Node 22**, **pnpm 10**.
+Prerequisites: **Node 24**, **pnpm 10** (latest).
 
 ```bash
 pnpm install        # install dependencies (lockfile is committed)
@@ -107,7 +107,7 @@ pnpm test:run       # single run (CI)
 pnpm test:cov       # coverage (v8)
 pnpm lint           # ESLint (Prettier enforced as a rule)
 pnpm lint:fix       # auto-fix
-pnpm build          # tsc --noEmit + vite production build → dist/
+pnpm build          # tsc --noEmit + vite production build → build/
 ```
 
 The dev server targets `/sub` and `/version` at the same origin; for a real engine you would

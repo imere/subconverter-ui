@@ -1,0 +1,20 @@
+minimumReleaseAge: 0
+
+overrides:
+  # ---------------------------------------------------------------------------
+  # ESLint 10 + eslint-plugin-react@7.37.5 es-shims cascade fix
+  # ---------------------------------------------------------------------------
+  # eslint-plugin-react@7.37.5 (newest build supporting ESLint 10) pulls the ljharb
+  # es-shims polyfill family, whose members now require two INCOMPATIBLE es-abstract
+  # subpaths that no single es-abstract release ships together:
+  #
+  #   * string.prototype.repeat@1.0.0        -> es-abstract/2019/*  (only in es-abstract <= 1.23.9)
+  #   * string.prototype.trim@1.2.11 (et al) -> es-abstract/2025/*  (only in es-abstract >= 1.24)
+  #
+  # A GLOBAL es-abstract pin therefore can never satisfy the whole tree: pinning to
+  # 1.23.9 breaks the 2025/ consumers, pinning to 1.24 breaks the 2019/ consumer.
+  # The fix is a SELECTIVE override: pin es-abstract to the last 2019/-shipping
+  # release (1.23.9) ONLY for the single package that needs it
+  # (string.prototype.repeat), while every other polyfill keeps the default
+  # es-abstract (1.24.x, which ships both 2024/ and 2025/).
+  string.prototype.repeat>es-abstract: 1.23.9

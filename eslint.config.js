@@ -15,7 +15,7 @@ import jsxA11y from 'eslint-plugin-jsx-a11y';
 export default [
   {
     ignores: [
-      'dist',
+      'build',
       'node_modules',
       'coverage',
       'docker/vol',
@@ -43,7 +43,20 @@ export default [
     },
     settings: { react: { version: 'detect' } },
     rules: {
-      'prettier/prettier': 'error',
+      // Prettier options live HERE (not in a .prettierrc) so ESLint is the single
+      // source of truth for both linting and formatting. Keep in sync with the
+      // repo style: single quotes, 100-col, trailing commas.
+      'prettier/prettier': [
+        'error',
+        {
+          semi: true,
+          singleQuote: true,
+          trailingComma: 'all',
+          printWidth: 100,
+          tabWidth: 2,
+          arrowParens: 'always',
+        },
+      ],
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react-hooks/rules-of-hooks': 'error',

@@ -6,6 +6,11 @@ import react from '@vitejs/plugin-react';
 // provides the equivalent reverse proxy, so the browser never hits CORS.
 export default defineConfig({
   plugins: [react()],
+  // All frontend build artifacts are emitted to `build/` (not the Vite default `dist`).
+  build: {
+    outDir: 'build',
+    emptyOutDir: true,
+  },
   server: {
     port: 5173,
     proxy: {

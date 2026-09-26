@@ -54,7 +54,7 @@ WebUI 是一套**前端应用**，通过 HTTP 调用 subconverter 的 REST API �
 
 | 类别 | 选型 | 说明 |
 |---|---|---|
-| 运行时 | Node 22 LTS | 与本机环境一致 |
+| 运行时 | Node 24 LTS | 最新 LTS，与 Docker 基础镜像一致 |
 | 语言 | TypeScript 最新（strict） | 工程级标配 |
 | UI | React 19 + Vite 最新 | 模板 `react-ts` |
 | 测试 | Vitest 最新 + @testing-library/react + @testing-library/jest-dom + jsdom | TDD 核心 |
@@ -88,7 +88,7 @@ export default [
     plugins: { prettier },
     rules: { 'prettier/prettier': 'error' }, // prettier 以 lint 错误形式呈现
   },
-  { ignores: ['dist', 'node_modules', 'docker/vol'] },
+  { ignores: ['build', 'node_modules', 'docker/vol'] },
 ];
 ```
 
@@ -181,7 +181,7 @@ subconverter-ui/                       # 项目根（git@github.com:imere/subcon
 
 ### 7.1 Dockerfile（多阶段）
 ```
-FROM node:22-alpine AS build
+FROM node:24-alpine AS build
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
@@ -189,11 +189,11 @@ COPY . .
 RUN npm run build
 
 FROM nginx:alpine AS runtime
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/build /usr/share/nginx/html
 COPY docker/ex/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80
 ```
-> 注意：compose 用 `build.context: ../..`（仓库根），`dockerfile: docker/ex/Dockerfile`；`.dockerignore` 排除 `node_modules`、`dist`、`docker/vol`。
+> 注意：compose 用 `build.context: ../..`（仓库根），`dockerfile: docker/ex/Dockerfile`；`.dockerignore` 排除 `node_modules`、`build`、`docker/vol`。
 
 ### 7.2 nginx.conf（SPA + 反代）
 - `/` → 静态 SPA（`try_files $uri /index.html`）。
