@@ -39,7 +39,8 @@ const ALWAYS_SKIP = new Set([
 
 const SKIP_FILES = new Set(['pnpm-lock.yaml', 'package-lock.json', 'yarn.lock']);
 
-const SKIP_EXT = /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|eot|pdf|zip|gz|tgz|rar|7z|map|wasm|exe|dll|so|dylib)$/i;
+const SKIP_EXT =
+  /\.(png|jpe?g|gif|ico|webp|woff2?|ttf|eot|pdf|zip|gz|tgz|rar|7z|map|wasm|exe|dll|so|dylib)$/i;
 
 /** Placeholders that look like secrets but are not. */
 const PLACEHOLDER =

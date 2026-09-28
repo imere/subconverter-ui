@@ -204,7 +204,7 @@ Four layers, strongest first:
 2. **Least-privilege credentials** — fine-grained PATs with the smallest scope and
    a short expiry. CI authenticates with the built-in `GITHUB_TOKEN`, never a
    personal token.
-3. **Pre-commit hook** — `scripts/secret-scan.mjs` refuses a commit containing
+3. **Pre-commit hook** — `scripts/secret-scan.js` refuses a commit containing
    anything credential-shaped (GitHub PATs, AWS keys, Slack/npm tokens, private
    keys, `token = "..."` assignments). Zero dependencies: plain node, so it runs
    identically on every machine.

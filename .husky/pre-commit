@@ -2,4 +2,4 @@ pnpm exec lint-staged
 
 # Blocks a commit that contains anything credential-shaped (PAT, AWS key, ...).
 # Zero dependencies: plain node, so it runs the same locally and in CI.
-node scripts/secret-scan.mjs
+node scripts/secret-scan.js
