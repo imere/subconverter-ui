@@ -6,13 +6,11 @@ coverage
 .env.*
 !.env.example
 
-# Keep the vol directory tree but ignore runtime data
-docker/vol/subconverter/base/config/*
-docker/vol/subconverter/base/rules/*
-docker/vol/subconverter/base/logs/*
-!docker/vol/subconverter/base/config/.gitkeep
-!docker/vol/subconverter/base/rules/.gitkeep
-!docker/vol/subconverter/base/logs/.gitkeep
+# Runtime data for the compose stack: bind-mounted into the subconverter
+# container, so it holds machine-local config/rules/logs. Nothing under it is
+# committed. The directories are created by docker/ex/start.sh, so a fresh
+# clone works without them.
+docker/vol/subconverter/
 
 # WorkBuddy internal data
 .workbuddy

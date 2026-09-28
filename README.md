@@ -150,8 +150,11 @@ cd docker/ex
 ### Volumes
 
 `docker/vol/subconverter/base/{config,rules,logs}` are mounted into the engine container at
-`/base/{config,rules,logs}` so pref.yml, rulesets and logs persist across restarts. They are
-git-ignored except for the `.gitkeep` placeholders.
+`/base/{config,rules,logs}` so pref.yml, rulesets and logs persist across restarts.
+
+The whole `docker/vol/subconverter/` tree is git-ignored — it is machine-local runtime data, so
+nothing under it belongs in version control. `./start.sh` creates the three directories on a fresh
+clone (without it, compose would create them owned by root).
 
 ### Environment
 
