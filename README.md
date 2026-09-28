@@ -193,6 +193,32 @@ GitHub Actions, and the Docker base image, grouped so they don't spam.
 
 ---
 
+## Secret hygiene
+
+Four layers, strongest first:
+
+1. **GitHub Push Protection** — in *Settings → Code security*, enable **Secret
+   scanning** and **Push protection**. This is the only layer that still stops a
+   leaked token when local hooks are bypassed (`--no-verify`), because the check
+   happens on GitHub's side. Enable it manually; it cannot be set from a file.
+2. **Least-privilege credentials** — fine-grained PATs with the smallest scope and
+   a short expiry. CI authenticates with the built-in `GITHUB_TOKEN`, never a
+   personal token.
+3. **Pre-commit hook** — `scripts/secret-scan.mjs` refuses a commit containing
+   anything credential-shaped (GitHub PATs, AWS keys, Slack/npm tokens, private
+   keys, `token = "..."` assignments). Zero dependencies: plain node, so it runs
+   identically on every machine.
+4. **CI** — the same scanner runs on every push/PR (`pnpm secret:scan`) as a
+   backstop.
+
+Suppress a genuine false positive by appending `secret-scan:ignore` to that line;
+run it manually with `pnpm secret:scan`.
+
+> If a token ever reaches a remote, **revoke/rotate it first** — deleting the
+> commit does not un-leak it — then purge it from history with `git filter-repo`.
+
+---
+
 ## License
 
 MIT (or align with the subconverter project as appropriate).

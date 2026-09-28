@@ -44,6 +44,12 @@ jobs:
           HUSKY: 0
         run: pnpm install --frozen-lockfile
 
+      # Same scanner as the pre-commit hook (CI is the backstop for anyone who
+      # bypasses hooks with --no-verify). Runs once, on Linux.
+      - name: Secret scan
+        if: matrix.os == 'ubuntu-latest'
+        run: pnpm secret:scan
+
       - name: Lint
         run: pnpm lint
 

@@ -10,9 +10,10 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:cov": "vitest run --coverage",
-    "lint": "eslint .",
-    "lint:fix": "eslint . --fix",
-    "prepare": "husky"
+  "lint": "eslint .",
+  "lint:fix": "eslint . --fix",
+  "secret:scan": "node scripts/secret-scan.mjs",
+  "prepare": "husky"
   },
   "engines": {
     "node": ">=24"
