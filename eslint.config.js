@@ -55,6 +55,10 @@ export default [
           printWidth: 100,
           tabWidth: 2,
           arrowParens: 'always',
+          // Stated explicitly: it must stay in sync with `.gitattributes`
+          // (`* text=auto eol=lf`), otherwise Windows checkouts turn CRLF and
+          // every line fails this rule with "Delete `CR`".
+          endOfLine: 'lf',
         },
       ],
       'react/react-in-jsx-scope': 'off',

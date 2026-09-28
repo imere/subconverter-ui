@@ -1,0 +1,7 @@
+# Normalize line endings everywhere: store and check out every text file with LF.
+#
+# Without this, the Windows runner (which defaults to core.autocrlf=true) checks
+# out CRLF, and the `prettier/prettier` rule then fails on every single line with
+# "Delete `CR`" — CI is red on Windows only, while Linux/macOS are green.
+# Keep in sync with `endOfLine: 'lf'` in eslint.config.js.
+* text=auto eol=lf
