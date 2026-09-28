@@ -166,18 +166,26 @@ exposing the stack, and consider a Basic-Auth layer in front of the management e
 
 ## CI / CD
 
-**CI** (`.github/workflows/ci.yml`) runs on every push / PR to `main`:
-`pnpm install --frozen-lockfile` → `pnpm lint` → `pnpm test:cov` (coverage uploaded as an
-artifact) → `pnpm build` → `docker build` of the webui image (validates the `Dockerfile`).
+**CI** (`.github/workflows/ci.yml`) runs on every push / PR to `main`, across a matrix of
+`ubuntu-latest`, `macos-latest` and `windows-latest` (`fail-fast: false`, so one platform's
+failure never hides the others): `pnpm install --frozen-lockfile` → `pnpm lint` →
+`pnpm test:cov` → `pnpm build` → `docker build` of the webui image (validates the `Dockerfile`).
+Coverage and build output are uploaded once, from the Linux job — the artifacts are identical
+on every platform.
 
-**Release** (`.github/workflows/release.yml`) triggers on `v*` tags: it builds a multi-arch
-(`linux/amd64`, `linux/arm64`) image and pushes it to GitHub Container Registry as
-`ghcr.io/imere/subconverter-ui:<version>` and `:latest`, then opens a GitHub Release with
-auto-generated notes.
+**Release** (`.github/workflows/release.yml`) publishes to GitHub Container Registry on two
+channels:
+
+| Trigger | Image tags | Architectures |
+| --- | --- | --- |
+| push to `main` | `ghcr.io/imere/subconverter-ui:alpha` | `linux/amd64` (fast feedback) |
+| push tag `v*` | `:<version>`, `:<major>.<minor>`, `:latest` | `linux/amd64`, `linux/arm64` |
+
+Tagged releases additionally open a GitHub Release with auto-generated notes.
 
 ```bash
-git tag v0.1.0
-git push origin v0.1.0      # → builds & publishes the image, creates the release
+git tag v0.0.1
+git push origin v0.0.1      # → builds & publishes the image, creates the release
 ```
 
 **Dependency updates** — Dependabot (`.github/dependabot.yml`) opens weekly PRs for npm (pnpm),
