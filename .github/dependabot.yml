@@ -9,6 +9,13 @@ updates:
     commit-message:
       prefix: "chore"
       include: "scope"
+    # TypeScript 7 ships no compiler API, so typescript-eslint cannot run against it
+    # (typescript-eslint#12518 closed as "not planned"; support is deferred to TS 7.1).
+    # Bumping past 6.x breaks `pnpm lint` outright, not just a warning. Remove this
+    # block once typescript-eslint announces >=7.1 support.
+    ignore:
+      - dependency-name: typescript
+        versions: ["7.x"]
     groups:
       dependencies:
         patterns:
