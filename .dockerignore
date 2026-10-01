@@ -5,3 +5,9 @@ coverage
 .git
 *.log
 docker/vol
+
+# WorkBuddy internal data. It is gitignored, but that does NOT protect the
+# image: the build stage runs `COPY . .`, which copies the working tree rather
+# than the git index. Without this line anything dropped in .workbuddy (helper
+# scripts, cached credentials) is baked into the build layer.
+.workbuddy
