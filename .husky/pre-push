@@ -4,9 +4,12 @@
 # any remote). This is what catches a secret that slipped past pre-commit, or
 # that was committed with --no-verify.
 #
-# On a private repo GitHub's push protection is unavailable (it needs a public
-# repo or a paid SKU), so this hook is the closest thing to a server-side gate:
-# after this point the credential is on the remote and ROTATION is mandatory.
+# This repository is public, so GitHub's server-side push protection is free —
+# enable it in Settings → Code security and analysis and enable push protection.
+# Server-side protection is strictly stronger than this hook: it cannot be
+# skipped with --no-verify. Until it is switched on, this hook is the only gate,
+# and once a credential reaches the remote ROTATION is mandatory — deleting the
+# commit afterwards does not un-leak it.
 if ! git remote | grep -q .; then
   echo "pre-push: no remote configured, nothing to push — skipping secret scan."
   exit 0
