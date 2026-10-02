@@ -21,8 +21,16 @@
  * Usage
  *   node scripts/secret-scan.js                # scan the working tree (default)
  *   git diff --cached -U0 | node scripts/secret-scan.js --patch
- *   git log -p --not --remotes -U0 | node scripts/secret-scan.js --patch
+ *   git log -p HEAD --not --remotes --diff-merges=first-parent -U0 \
+ *     | node scripts/secret-scan.js --patch
  *   node scripts/secret-scan.js --quiet        # only print on failure
+ *
+ * The two git invocations are both load-bearing and both have burnt us:
+ *   - `HEAD` must be explicit — `git log --not --remotes` has no positive
+ *     revision, selects NOTHING, and reports "clean" over a real leak.
+ *   - `--diff-merges=first-parent` makes git emit a patch for merge commits.
+ *     Without it a secret introduced while resolving a merge is invisible.
+ * Do not drop either flag without re-running the verification in .husky/pre-push.
  *
  * Why `--patch` reads stdin instead of calling git itself: spawning `git` from
  * node is not reliable everywhere (on some Windows sandboxes spawnSync fails
@@ -321,8 +329,8 @@ function collectTree() {
  * Read a unified diff from stdin and scan every ADDED line only.
  *
  * Used for both gates, with a different producer:
- *   pre-commit : git diff --cached -U0          (what the commit will record)
- *   pre-push   : git log -p --not --remotes -U0 (what the push will send)
+ *   pre-commit : git diff --cached -U0
+ *   pre-push   : git log -p HEAD --not --remotes --diff-merges=first-parent -U0
  *
  * Scanning only added lines is deliberate: a line you did not write cannot be
  * your leak, and it keeps the noise down.
