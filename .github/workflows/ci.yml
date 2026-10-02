@@ -91,7 +91,7 @@ jobs:
       # (from Linux) instead of three redundant copies.
       - name: Upload coverage
         if: ${{ always() && matrix.os == 'ubuntu-latest' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: coverage
           path: build/coverage/
@@ -102,7 +102,7 @@ jobs:
 
       - name: Upload build output
         if: matrix.os == 'ubuntu-latest'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: webui-build
           path: build/
