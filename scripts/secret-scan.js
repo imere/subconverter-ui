@@ -347,6 +347,13 @@ function collectPatch() {
   for (const [p, { commit: c, lines }] of chunks) {
     targets.push({ text: lines.join('\n'), loc: { path: p, commit: c } });
   }
+  // An empty diff is usually "nothing to scan", but it is also exactly what a
+  // broken revision expression produces — and that failure mode is silent.
+  // Say so out loud so it can never be mistaken for a clean result.
+  const sawCommitMarker = /^commit /m.test(patch);
+  if (targets.length === 0 && !sawCommitMarker && patch.trim() !== '') {
+    console.error('secret-scan: diff had no added lines — nothing was actually checked.');
+  }
   return targets;
 }
 
