@@ -1,0 +1,21 @@
+# --- Secret gate, last chance before objects leave the machine ---------------
+#
+# Scans exactly the commits `git push` is about to send (everything not yet on
+# any remote). This is what catches a secret that slipped past pre-commit, or
+# that was committed with --no-verify.
+#
+# On a private repo GitHub's push protection is unavailable (it needs a public
+# repo or a paid SKU), so this hook is the closest thing to a server-side gate:
+# after this point the credential is on the remote and ROTATION is mandatory.
+if ! git remote | grep -q .; then
+  echo "pre-push: no remote configured, nothing to push — skipping secret scan."
+  exit 0
+fi
+
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks detect --source . --log-opts="--not --remotes" --redact --config .gitleaks.toml
+else
+  echo "gitleaks not on PATH — falling back to scripts/secret-scan.js (fewer rules)." >&2
+  outgoing=$(git log -p --not --remotes -U0 --no-color) || exit 1
+  printf '%s\n' "$outgoing" | node scripts/secret-scan.js --patch
+fi

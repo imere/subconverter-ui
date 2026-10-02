@@ -1,5 +1,24 @@
 pnpm exec lint-staged
 
-# Blocks a commit that contains anything credential-shaped (PAT, AWS key, ...).
-# Zero dependencies: plain node, so it runs the same locally and in CI.
-node scripts/secret-scan.js
+# --- Secret gate -------------------------------------------------------------
+#
+# gitleaks (150+ rules) when it is installed, otherwise the zero-dependency
+# Node scanner — so a machine without gitleaks is never bare.
+#
+# We scan the DIFF, not the working tree: `git commit` records the index, and
+# the index and the working tree can disagree.
+#
+# NOTE: any client-side hook can be skipped with --no-verify. The pre-push hook
+# is the second chance; CI is the backstop. Neither can undo a leak — they can
+# only shorten it. So if this fires on a real credential, ROTATE IT FIRST.
+#
+# The fallback reads the diff on stdin rather than calling git itself: node
+# cannot reliably spawn git on every platform (EBUSY on some Windows setups).
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --source . --staged --redact --config .gitleaks.toml
+else
+  echo "gitleaks not on PATH — falling back to scripts/secret-scan.js (fewer rules)." >&2
+  echo "Install it for full coverage: https://github.com/gitleaks/gitleaks#installing" >&2
+  staged=$(git diff --cached --diff-filter=ACMR -U0 --no-color) || exit 1
+  printf '%s\n' "$staged" | node scripts/secret-scan.js --patch
+fi

@@ -1,0 +1,83 @@
+# gitleaks configuration for subconverter-ui.
+#
+# We extend the default rule set (150+ provider rules) rather than replace it,
+# then add the two gaps we measured: gitleaks' default rules miss credentials
+# embedded in connection URIs and some unquoted YAML/env assignments.
+#
+# Docs: https://github.com/gitleaks/gitleaks#configuration
+#
+# To silence a genuine false positive, either:
+#   - append `#gitleaks:allow` to the offending line, or
+#   - add the finding's fingerprint to .gitleaksignore (`gitleaks detect -r report.json`
+#     prints it, or use `--report-format json`)
+
+title = "subconverter-ui"
+
+[extend]
+useDefault = true
+
+# ---------------------------------------------------------------------------
+# Rules the default set does not cover
+# ---------------------------------------------------------------------------
+
+# A Postgres/MySQL/Redis URI whose userinfo carries "user:password@host".
+# The secret is a URI component, so no provider rule ever matches it — and it
+# is one of the most common ways a real credential reaches git.
+#
+# NOTE: no literal example here on purpose. This file is itself scanned, and a
+# realistic-looking sample would be flagged by this very rule.
+[[rules]]
+id = "uri-credential"
+description = "username:password embedded in a connection URI"
+regex = '''(?i)\b(?:postgres(?:ql)?|mysql|mariadb|mongodb(?:\+srv)?|redis|rediss|amqps?|mssql|ftp|https?)://[^\s:/@]{1,64}:([^\s:@/]{3,})@'''
+secretGroup = 1
+keywords = [
+  "postgres://",
+  "postgresql://",
+  "mysql://",
+  "mariadb://",
+  "mongodb://",
+  "mongodb+srv://",
+  "redis://",
+  "rediss://",
+  "amqp://",
+  "amqps://",
+  "mssql://",
+]
+
+[[rules]]
+id = "jdbc-credential"
+description = "password in a JDBC URL"
+regex = '''(?i)jdbc:[a-z0-9]+:[^\s]*?password=([^\s;&"']{3,})'''
+secretGroup = 1
+keywords = ["jdbc:"]
+
+[[rules]]
+id = "internal-service-token"
+description = "self-issued internal token (svc_<env>_<32>)"
+regex = '''\bsvc_(?:dev|stg|prod)_[A-Za-z0-9]{32}\b'''
+keywords = ["svc_dev_", "svc_stg_", "svc_prod_"]
+
+# ---------------------------------------------------------------------------
+# Allowlist
+# ---------------------------------------------------------------------------
+# NOTE: defined as a second allowlist so it ADDS to the default one instead of
+# replacing it (a single top-level [allowlist] would clobber gitleaks' built-in
+# placeholder filtering and make false positives worse).
+
+[[allowlists]]
+description = "repo-specific false positives"
+paths = [
+  '''(?:^|/)pnpm-lock\.yaml$''',
+  '''(?:^|/)package-lock\.json$''',
+  '''(?:^|/)yarn\.lock$''',
+  # Our own rule definitions are credential-shaped by definition.
+  '''(?:^|/)\.?gitleaks\.toml$''',
+  # Local-only tooling state (also gitignored and dockerignored).
+  '''(?:^|/)\.workbuddy/''',
+]
+regexes = [
+  # Matches the ignore marker understood by scripts/secret-scan.js too, so one
+  # annotation silences both scanners.
+  '''secret-scan:ignore''',
+]
