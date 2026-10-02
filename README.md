@@ -129,10 +129,13 @@ machine-readable (and release notes can be auto-generated).
 
 ---
 
-## Docker / Podman deployment
+## Docker deployment
 
 All orchestration assets live in `docker/ex/`. The compose file defines two services on a private
 `sc-net` network; only the `webui` service is published to the host on **port 8080**.
+
+> **Requirement:** Docker with the **Compose v2 plugin** (`docker compose`, with a space — not the
+> legacy `docker-compose`). Docker Desktop ships it; on Linux install `docker-compose-plugin`.
 
 ```bash
 cd docker/ex
@@ -162,8 +165,8 @@ clone (without it, compose would create them owned by root).
 exposing the stack, and consider a Basic-Auth layer in front of the management endpoints
 (`/getprofile`, `/refreshrules`, …) if you later implement the config-management tiers.
 
-> **Note on tooling:** the scripts use `podman compose`. On a Docker host, replace
-> `podman compose` with `docker compose` in the scripts (the compose file is compatible).
+`compose.yml` is plain Compose Specification — it is not tied to any particular runtime, so the
+same file works on any Docker-compatible engine.
 
 ---
 

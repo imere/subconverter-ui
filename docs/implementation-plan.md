@@ -62,7 +62,7 @@ WebUI 是一套**前端应用**，通过 HTTP 调用 subconverter 的 REST API �
 | 格式化 | **Prettier 最新版 集成进 ESLint**（见 §4） | 用户硬性要求 |
 | 钩子 | husky 最新 + lint-staged 最新 | pre-commit 门禁 |
 | 容器 | 多阶段 Dockerfile（node 构建 → nginx:alpine 托管） | |
-| 编排 | docker compose（本机用 podman 验证） | |
+| 编排 | docker compose | |
 
 > 全部依赖以 `@latest` 安装（含 ESLint 10+、Prettier、Vite、Vitest、React 19、TypeScript），版本写入 lockfile 锁死。
 
@@ -243,19 +243,19 @@ services:
 - **P1 API 层（TDD）**：先写 `subconverter.test.ts` 与 `buildSubUrl.test.ts`，再实现客户端与工具函数。
 - **P2 UI 层（TDD）**：`useConversion` → `ConversionForm` → `ResultViewer` → `App`，逐组件红绿重构。
 - **P3 容器化**：Dockerfile、nginx.conf、compose.yml、ex/ 脚本、vol/ 占位目录。
-- **P4 podman 验证**：见第 10 节。
+- **P4 本机验证**：见第 10 节。
 - **P5 文档与 CI**：README、GitHub Actions CI。
 
 ---
 
-## 10. 本机 podman 构建与调试验证
+## 10. 本机 Docker 构建与调试验证
 
 ```bash
 # 1. 构建 webui 镜像
-podman build -f docker/ex/Dockerfile -t subconverter-ui:local .
+docker build -f docker/ex/Dockerfile -t subconverter-ui:local .
 
 # 2. 启动双服务
-cd docker/ex && ./start.sh          # = podman compose -f compose.yml up -d
+cd docker/ex && ./start.sh          # = docker compose -f compose.yml up -d
 
 # 3. 健康检查
 curl -fsS http://localhost:8080/version   # 经 nginx 反代到 subconverter
@@ -267,7 +267,7 @@ curl "http://localhost:8080/sub?target=clash&url=<ENCODED>"
 # 5. 清理
 ./down.sh
 ```
-> 验证点：镜像可构建、SPA 可服务、反代可达 subconverter、卷挂载生效（`docker/vol/subconverter/base/logs` 出现日志）。需先确认本机 `podman compose` 子命令可用（否则安装 `podman-compose`）。
+> 验证点：镜像可构建、SPA 可服务、反代可达 subconverter、卷挂载生效（`docker/vol/subconverter/base/logs` 出现日志）。需先确认本机 `docker compose` 子命令可用（Docker Desktop 自带 Compose 插件）。
 
 ---
 
@@ -275,4 +275,4 @@ curl "http://localhost:8080/sub?target=clash&url=<ENCODED>"
 
 - **CORS**：必须由 nginx 反代，不可浏览器直连 subconverter。
 - **token 安全**：若启用配置管理（readconf/updateconf），token 不应落到前端；建议经后端代理或仅内网暴露。
-- **卷路径对齐**：实现时用 `podman run --rm tindy2013/subconverter:latest ls -la /base` 复核容器内真实结构，确保 `vol/` 与实际一致。
+- **卷路径对齐**：实现时用 `docker run --rm tindy2013/subconverter:latest ls -la /base` 复核容器内真实结构，确保 `vol/` 与实际一致。

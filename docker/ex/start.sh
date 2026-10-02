@@ -9,4 +9,4 @@ for d in config rules logs; do
   mkdir -p "../vol/subconverter/base/$d"
 done
 
-podman compose -f compose.yml up -d
+docker compose -f compose.yml up -d
