@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 # ---- build stage: install deps and produce the static bundle ----
-FROM node:24-alpine AS build
+FROM node:26-alpine AS build
 WORKDIR /app
 RUN npm install -g pnpm@latest
 # Install dependencies first for better layer caching.
