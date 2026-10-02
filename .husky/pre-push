@@ -16,10 +16,17 @@ fi
 # revision selects NOTHING, which makes the scan pass silently — a gate that
 # always says "clean" is worse than no gate at all. Verified against a commit
 # containing a fake token: both scanners must exit non-zero.
+# `--diff-merges=first-parent` is not cosmetic. gitleaks enumerates only
+# non-merge commits (measured: a 4-commit range containing 1 merge scanned 3),
+# so anything introduced BY a merge itself — a conflict resolution, a stray
+# line pasted while resolving — is invisible to it. Reproduced: a merge whose
+# resolved content held a token was reported "no leaks found" without this
+# flag, and failed with exit 1 once it was added.
+DR="HEAD --not --remotes --diff-merges=first-parent"
 if command -v gitleaks >/dev/null 2>&1; then
-  gitleaks detect --source . --log-opts="HEAD --not --remotes" --redact --config .gitleaks.toml
+  gitleaks detect --source . --log-opts="$DR" --redact --config .gitleaks.toml
 else
   echo "gitleaks not on PATH — falling back to scripts/secret-scan.js (fewer rules)." >&2
-  outgoing=$(git log -p HEAD --not --remotes -U0 --no-color) || exit 1
+  outgoing=$(git log -p $DR -U0 --no-color) || exit 1
   printf '%s\n' "$outgoing" | node scripts/secret-scan.js --patch
 fi

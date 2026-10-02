@@ -68,9 +68,12 @@ jobs:
             | tar -xz -C /usr/local/bin gitleaks
           gitleaks version
 
+      # `--diff-merges=first-parent`: gitleaks enumerates only non-merge
+      # commits, so content introduced by a merge (a conflict resolution, say)
+      # would otherwise never reach the scanner.
       - name: Secret scan (full history)
         if: matrix.os == 'ubuntu-latest'
-        run: gitleaks detect --source . --redact --config .gitleaks.toml
+        run: gitleaks detect --source . --redact --config .gitleaks.toml --log-opts="HEAD --diff-merges=first-parent"
 
       # The zero-dependency fallback stays in the loop so it cannot rot
       # unnoticed: if it starts failing while gitleaks passes, it is a bug in
